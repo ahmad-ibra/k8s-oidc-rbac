@@ -1,0 +1,14 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+kubeadmConfigPatches:
+  - |
+    apiVersion: kubeadm.k8s.io/v1beta2
+    kind: ClusterConfiguration
+    metadata:
+      name: config
+    apiServer:
+      extraArgs:
+        oidc-issuer-url: https://dev-04886319.okta.com/oauth2/default
+        oidc-client-id: 0oalgq0kxjvutVEaR5d7
+        oidc-username-claim: email
+        oidc-groups-claim: group
