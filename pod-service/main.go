@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"sync"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v4"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -14,9 +16,10 @@ import (
 )
 
 type Server struct {
-	clientset  *kubernetes.Clientset
-	podCounter int
-	mu         sync.Mutex
+	defaultClientset *kubernetes.Clientset
+	clientset        *kubernetes.Clientset
+	podCounter       int
+	mu               sync.Mutex
 }
 
 func main() {
@@ -26,16 +29,19 @@ func main() {
 		log.Fatalf("Failed to create in-cluster config: %v", err)
 	}
 
-	clientset, err := kubernetes.NewForConfig(config)
+	defaultClientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		log.Fatalf("Failed to create Kubernetes clientset: %v", err)
 	}
 
 	server := &Server{
-		clientset: clientset,
+		defaultClientset: defaultClientset,
 	}
 
 	app := fiber.New()
+
+	// Middleware to handle impersonation
+	app.Use(server.impersonationMiddleware(config))
 
 	// Define API routes
 	app.Post("/api/v1/pods", server.createPod)
@@ -47,6 +53,87 @@ func main() {
 	if err := app.Listen(":8000"); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
+}
+
+// impersonationMiddleware sets impersonation headers in the Kubernetes client.
+func (s *Server) impersonationMiddleware(baseConfig *rest.Config) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		authHeader := c.Get("Authorization")
+		if authHeader == "" {
+			// No impersonation; continue request handling
+			s.clientset = s.defaultClientset
+			return c.Next()
+		}
+
+		// Extract the token from the Authorization header
+		if !strings.HasPrefix(authHeader, "Bearer ") {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Invalid Authorization header format",
+			})
+		}
+		token := strings.TrimPrefix(authHeader, "Bearer ")
+
+		// Decode the JWT to extract user information
+		sub, groups, err := decodeToken(token)
+		if err != nil {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": fmt.Sprintf("Failed to decode token: %v", err),
+			})
+		}
+
+		// Create a new config with the impersonation settings
+		impersonationConfig := rest.CopyConfig(baseConfig)
+		impersonationConfig.BearerToken = token
+		impersonationConfig.Impersonate = rest.ImpersonationConfig{
+			UserName: sub,
+			Groups:   groups,
+		}
+
+		// Update the clientset with the new impersonation config
+		impersonatedClientset, err := kubernetes.NewForConfig(impersonationConfig)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": fmt.Sprintf("Failed to create impersonation clientset: %v", err),
+			})
+		}
+
+		// Replace the clientset in the server with the impersonation client
+		s.clientset = impersonatedClientset
+
+		return c.Next()
+	}
+}
+
+// decodeToken parses the JWT token to extract the email and groups.
+func decodeToken(tokenString string) (string, []string, error) {
+	// Parse the token without verifying the signature (Okta should handle validation).
+	token, _, err := new(jwt.Parser).ParseUnverified(tokenString, jwt.MapClaims{})
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to parse token: %w", err)
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return "", nil, fmt.Errorf("invalid token claims format")
+	}
+
+	// Extract email (or username)
+	sub, ok := claims["sub"].(string)
+	if !ok || sub == "" {
+		return "", nil, fmt.Errorf("sub claim missing or invalid")
+	}
+
+	// Extract groups
+	var groups []string
+	if rawGroups, ok := claims["groups"].([]interface{}); ok {
+		for _, g := range rawGroups {
+			if group, ok := g.(string); ok {
+				groups = append(groups, group)
+			}
+		}
+	}
+
+	return sub, groups, nil
 }
 
 // createPod handles POST /api/v1/pods

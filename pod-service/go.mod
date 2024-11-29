@@ -4,6 +4,7 @@ go 1.22.5
 
 require (
 	github.com/gofiber/fiber/v2 v2.52.5
+	github.com/golang-jwt/jwt/v4 v4.5.1
 	k8s.io/api v0.31.3
 	k8s.io/apimachinery v0.31.3
 	k8s.io/client-go v0.31.3

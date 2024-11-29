@@ -24,7 +24,10 @@ kind-load:
 deploy:
 	kubectl apply -f pod-service.yaml
 
+port-forward:
+	until kubectl port-forward service/pod-service 8000:80; do echo "Failed attempt at port-forwardig. Retrying..."; sleep 2; done
+
 undeploy:
 	kubectl delete -f pod-service.yaml
 
-kind-deploy: build kind-load deploy
+kind-deploy: build kind-load deploy port-forward
