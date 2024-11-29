@@ -3,8 +3,6 @@ POCs described here: https://app.excalidraw.com/s/172R1vSdAWD/15dsrtpnz9u
 
 Purpose is to test out RBAC with a OIDC provider.
 
-The `/kind` directory shows how to setup the cluster.
-
 The `/oath-server` directory contains a go server that handles the OAUTH hanshake with Okta in lue of a frontend
 
 The `/pod-service` directory contains a go server that will run in a kind cluster and is used to create, get, and list pods in a cluster.
@@ -36,27 +34,16 @@ go run oath-server/main.go
 
 Visit `localhost:8080` to kick off the OAuth flow.
 
-## Cluster Setup
-
-Follow the steps below to configure a kind cluster where the api-server uses OIDC.
-Also, this guide will setup the roles and role-bidings that'll help us test out RBAC.
-
-
-Create the kind cluster by running:
-```
-kind create cluster --config kind/cluster-okta.yaml
-```
-
-Apply the roles and role-bindings:
-```
-kubectl apply -f kind/roles.yaml
-```
-
 ## K8s Backend Setup
 
-Once we have a kind cluster up and running, we can run the pod-service backend on it like this:
+First we need to setup our kind cluster with OIDC enabled
 ```
 cd pod-service
+kind create cluster --config kind-okta-oidc.yaml
+```
+
+Once we have a kind cluster up and running, we can run the pod-service backend on it with the following command. This will also apply all our roles and bindings that we need:
+```
 make kind-deploy
 ```
 
