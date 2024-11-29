@@ -7,7 +7,7 @@ The `/kind` directory shows how to setup the cluster.
 
 The `/oath-server` directory contains a go server that handles the OAUTH hanshake with Okta in lue of a frontend
 
-The `/k8s-backend` directory contains a go server that will run in a cluster and is used to create, get, and list pods in a cluster.
+The `/pod-service` directory contains a go server that will run in a kind cluster and is used to create, get, and list pods in a cluster.
 This server will impersonate users that invoke its endpoints. K8s native RBAC will ensure only authorized users can create, get, and list pods.
 
 ## Okta Setup
@@ -52,3 +52,21 @@ Apply the roles and role-bindings:
 kubectl apply -f kind/roles.yaml
 
 ```
+
+## K8s Backend Setup
+
+Once we have a kind cluster up and running, we can run the pod-service backend on it like this:
+```
+cd pod-service
+make kind-deploy
+kubectl port-forward service/pod-service 8000:80
+```
+
+Assuming it started up correctly, in another terminal, we can then issue requests like this:
+```
+curl -X GET \
+-H "Authorization: Bearer <Access Token>" \
+http://localhost:8000/api/v1/pods
+```
+
+If we need to remove the pod from the cluster, just run `make undeploy`

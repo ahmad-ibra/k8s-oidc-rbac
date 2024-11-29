@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pod-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pod-service
+  template:
+    metadata:
+      labels:
+        app: pod-service
+    spec:
+      containers:
+        - name: pod-service
+          image: ahmadibraspectrocloud/pod-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          command: ["/bin/sh"]
+          args: ["-c", "/pod-service"]
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pod-service
+spec:
+  selector:
+    app: pod-service
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000
