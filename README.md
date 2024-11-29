@@ -1,4 +1,4 @@
-# k8s-rbac
+# k8s-oidc-rbac
 POCs described here: https://app.excalidraw.com/s/172R1vSdAWD/15dsrtpnz9u
 
 Purpose is to test out RBAC with a OIDC provider.
