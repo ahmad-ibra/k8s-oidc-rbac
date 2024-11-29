@@ -50,7 +50,6 @@ kind create cluster --config kind/cluster-okta.yaml
 Apply the roles and role-bindings:
 ```
 kubectl apply -f kind/roles.yaml
-
 ```
 
 ## K8s Backend Setup
