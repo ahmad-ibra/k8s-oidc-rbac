@@ -4,7 +4,11 @@ POCs described here: https://app.excalidraw.com/s/172R1vSdAWD/15dsrtpnz9u
 Purpose is to test out RBAC with a OIDC provider.
 
 The `/kind` directory shows how to setup the cluster.
-The `/oath-server` direstory contains a go server that handles the OAUTH hanshake with Okta in lue of a frontend
+
+The `/oath-server` directory contains a go server that handles the OAUTH hanshake with Okta in lue of a frontend
+
+The `/k8s-backend` directory contains a go server that will run in a cluster and is used to create, get, and list pods in a cluster.
+This server will impersonate users that invoke its endpoints. K8s native RBAC will ensure only authorized users can create, get, and list pods.
 
 ## Okta Setup
 
