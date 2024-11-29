@@ -59,10 +59,15 @@ Once we have a kind cluster up and running, we can run the pod-service backend o
 ```
 cd pod-service
 make kind-deploy
-kubectl port-forward service/pod-service 8000:80
 ```
 
-Assuming it started up correctly, in another terminal, we can then issue requests like this:
+Assuming it started up correctly, in another terminal, we can then issue requests as a cluster admin like this:
+```
+curl -X GET \
+http://localhost:8000/api/v1/pods
+```
+
+To impersonate a user, generate the access token by visiting `localhost:8080`, then issue the following request:
 ```
 curl -X GET \
 -H "Authorization: Bearer <Access Token>" \
