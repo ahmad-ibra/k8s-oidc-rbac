@@ -29,7 +29,7 @@ Following this guide, i ran the steps below: https://developer.okta.com/blog/202
 Run the oath-server:
 ```
 cd oath-server
-go run oath-server/main.go
+go run main.go
 ```
 
 Visit `localhost:8080` to kick off the OAuth flow.
