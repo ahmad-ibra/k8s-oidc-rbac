@@ -1,0 +1,28 @@
+config:
+  issuer: http://127.0.0.1:5556/dex
+
+  storage:
+    type: memory
+  web:
+    http: 0.0.0.0:5556
+  telemetry:
+    http: 0.0.0.0:5558
+
+  staticClients:
+  - id: example-app
+    redirectURIs:
+    - 'http://127.0.0.1:5555/callback'
+    name: 'K8s RBAC Demo'
+    secret: ZXhhbXBsZS1hcHAtc2VjcmV0
+
+  connectors:
+    - type: github
+      id: github
+      name: GitHub
+      config:
+        clientID: "Ov23liUdfC4hRNwC9Egy"
+        clientSecret: "3394fa20f59c600e10c21a5498883398a6b4d2c1"
+        redirectURI: http://127.0.0.1:5556/dex/callback
+        loadAllGroups: true
+        teamNameField: slug
+        useLoginAsID: false

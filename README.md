@@ -3,46 +3,31 @@ POCs described here: https://app.excalidraw.com/s/172R1vSdAWD/15dsrtpnz9u
 
 Purpose is to test out RBAC with a OIDC provider.
 
-The `/oath-server` directory contains a go server that handles the OAUTH hanshake with Okta in lue of a frontend
+## Github OAuth App
+### Setup 
+First I created the [k8s-rbac-demo](https://github.com/k8s-rbac-demo) organization. Within that organization, I setup 2 teams: 
+- `k8s-creator`: members (ahm.ibr+creator@hotmail.com)
+- `k8s-lister`: members (ahm.ibr+lister@hotmail.com and ahm.ibr+creator@hotmail.com)
 
-The `/pod-service` directory contains a go server that will run in a kind cluster and is used to create, get, and list pods in a cluster.
-This server will impersonate users that invoke its endpoints. K8s native RBAC will ensure only authorized users can create, get, and list pods.
+Next, I created an OAuth Application named [K8s RBAC Demo](https://github.com/settings/applications/2816314)
 
-## Okta Setup
-
-Following this guide, i ran the steps below: https://developer.okta.com/blog/2021/11/08/k8s-api-server-oidc#what-youll-need-to-get-started
-
-- created this okta account: https://dev-04886319-admin.okta.com/admin/getting-started
-
-- next followed this guide: https://developer.okta.com/blog/2021/10/08/secure-access-to-aws-eks#configure-your-okta-org
-    - created k8s-creator-group and k8s-user-group
-    - created user with email ahmad.ibrahim+creator@spectrocloud.com that is in both reader and creater groups
-    - created user with email ahmad.ibrahim+reader@spectrocloud.com that is in the reader group
-    - created user with email ahmad.ibrahim@spectrocloud.com that is in no group
-    - both users passwords are welcome2Spectr0!
-    - created an app integration named k8s
-        - client ID: 0oalgq0kxjvutVEaR5d7
-    - using default authorization server
-        - audience: api://default
-        - issuer: https://dev-04886319.okta.com/oauth2/default
-
-Run the oath-server:
+### Running Dex on Kind
+We use dex to handle the OAuth handshake for us with our github OAuth application.
+To setup a kind cluster, and install dex on it, run:
 ```
-cd oath-server
-go run main.go
+make install-dex
 ```
 
-Visit `localhost:8080` to kick off the OAuth flow.
+Next, to start the dex-ui, in a separate terminal run:
+```
+make start-dex-ui
+```
+
+This will start the dex-ui on [localhost:5555](http://localhost:5555).
+Visit that URL to kick off the OAuth flow. Login as either of the created users to get their access tokens.
 
 ## K8s Backend Setup
-
-First we need to setup our kind cluster with OIDC enabled
-```
-cd pod-service
-kind create cluster --config kind-okta-oidc.yaml
-```
-
-Once we have a kind cluster up and running, we can run the pod-service backend on it with the following command. This will also apply all our roles and bindings that we need:
+Run the pod-service backend on our kind cluster with the following command. This will also apply all our roles and bindings that we need:
 ```
 make kind-deploy
 ```
