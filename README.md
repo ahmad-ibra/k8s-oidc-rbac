@@ -15,7 +15,7 @@ Next, I created an OAuth Application named [K8s RBAC Demo](https://github.com/se
 We use dex to handle the OAuth handshake for us with our github OAuth application.
 To setup a kind cluster, and install dex on it, run:
 ```
-make install-dex
+make start-dex
 ```
 
 Next, to start the dex-ui, in a separate terminal run:
